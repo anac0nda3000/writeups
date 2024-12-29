@@ -1,0 +1,96 @@
+RECON
+
+gathered users:
+	- Administrator
+	
+	- from /var/wolfcms:
+		define('DB_DSN', 'mysql:dbname=wolf;host=localhost;port=3306');
+		define('DB_USER', 'root');
+		define('DB_PASS', 'john@123');
+		define('TABLE_PREFIX', '');
+		
+		Password is in sha512 + salt so you know how to change it manually in the database!
+		
+	wolf db users:
+		Administrator
+		admin@yoursite.com
+		admin
+		3a1be46a798dce0d880f633ce195b676839a0ce344c917a7ea1270816dcb649ce1e2b811b56fe93c9d3c4e679151180129ee9483ea39bff4d4578c4be6c77e1f
+		6806b774443f2c34231eceddf156a42d3c26a2b5219ee9d55f5e3c9aea534167
+		
+		879A5B5702DB31262568B6D667CC8E130BF3A99434642DE2F5BF7FF30205F127C6757AB03C4CD84BF689832352E80C9C56D200F0E2282C542D1D47BFF6F9BE51
+
+netdiscover
+	192.168.1.4     08:00:27:be:bb:87      5     210  PCS Systemtechnik GmbH
+
+nmap
+	Not shown: 997 filtered tcp ports (no-response)
+	PORT     STATE  SERVICE    VERSION
+	22/tcp   open   ssh        OpenSSH 5.9p1 Debian 5ubuntu1.1 (Ubuntu Linux; protocol 2.0)
+	3128/tcp open   http-proxy Squid http proxy 3.1.19
+	8080/tcp closed http-proxy
+	MAC Address: 08:00:27:BE:BB:87 (Oracle VirtualBox virtual NIC)
+	Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+	
+notes:
+	- nikto really big output looks like noise
+	- after long time, looks like squid on 3128 is a proxy server (content can be acessed using the proxy)
+	- nikto found /cgi-bin/status (cve-2014-6278)
+		- vulnerable to shellshock
+	- dirb found some directories on 80:
+		+ http://192.168.1.4/cgi-bin/ (CODE:403|SIZE:287)       
+			                                                               
+		+ http://192.168.1.4/connect (CODE:200|SIZE:109)
+			- "some thing that connect things"
+		+ http://192.168.1.4/index (CODE:200|SIZE:21)                                                                          
+		+ http://192.168.1.4/index.php (CODE:200|SIZE:21)                                                                      
+		+ http://192.168.1.4/robots (CODE:200|SIZE:45)                                                                         
+		+ http://192.168.1.4/robots.txt (CODE:200|SIZE:45)                                                                     
+		+ http://192.168.1.4/server-status (CODE:403|SIZE:292) 
+			- You don't have permission to access /server-status on this server.
+	- curl on robots.txt showed a /wolfcms entry
+		- accessing this wolfcms using the proxy took us to a administration page
+			- gathered user Administrator on this portal
+	
+   - mod_cgi
+   - wolfcms version: wolfcms-v0.8.2-blue
+   - PHP 5.3.10-1ubuntu3.21 with Suhosin-Patch
+   - Ubuntu-Server 12.04.4 LTS "Precise Pangolin" 
+
+THOUGHTS
+
+	- Sometimes, need to think simpler, try simpler things (not everything is the complex system, that needs the overengineered way...)
+		- Like, if was paid attention to /etc/passwd and tryied login on users with gathered credentials (john@123) instead of try to find a way to priv escalation
+		- Or even before, could use the proxy to gain access on the server instead of trying to exploit and shit
+		
+	- Learned something about gopher XD
+	- Learned about shellshock exploit and one way to use it (via mod_cgi using UserAgent header, that will be set as an env variable)
+	- Learned that there is subtleties on the gained shell, like:
+		- need to run python -c 'import pty;pty.spawn("/bin/bash");', or other script, to get a real interactive shell (is really it?)
+
+-----------------------------------------------------------------------------------------
+forget all this... looks like its only noise
+
+curl on port 3128
+	- * special event: FTP / Gopher directory listing */
+
+known error pages:
+	- Invalid URL
+	- Unsupported Request Method and Protocol
+	- Invalid Request
+
+mail to webmaster on error page for invalid method
+	mailto:webmaster?subject=CacheErrorInfo - ERR_UNSUP_REQ&body=CacheHost: localhost
+	ErrPage: ERR_UNSUP_REQ
+	Err: [none]
+	TimeStamp: Sun, 05 Mar 2023 02:33:23 GMT
+
+	ClientIP: 192.168.1.7
+
+	HTTP Request:
+	GET /config.php HTTP/1.1
+	Host: 192.168.1.4:3128
+	Connection: keep-alive
+	DNT: 1
+	
+- "gopher://192.168.1.4:3128//gopher://localhost:8080" (after a long time... hehehe)

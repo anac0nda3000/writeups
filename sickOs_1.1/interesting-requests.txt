@@ -1,0 +1,36 @@
+-----------------------------------------------------------------------------------------
+curl -v --proxy "192.168.1.4:3128" "http://192.168.1.4:80/wolfcms"       
+*   Trying 192.168.1.4:3128...
+* Connected to 192.168.1.4 (192.168.1.4) port 3128 (#0)
+> GET http://192.168.1.4/wolfcms HTTP/1.1
+> Host: 192.168.1.4
+> User-Agent: curl/7.87.0
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> 
+* Mark bundle as not supporting multiuse
+* HTTP 1.0, assume close after body
+< HTTP/1.0 301 Moved Permanently
+< Date: Sun, 05 Mar 2023 05:00:24 GMT
+< Server: Apache/2.2.22 (Ubuntu)
+< Location: http://192.168.1.4/wolfcms/
+< Vary: Accept-Encoding
+< Content-Length: 312
+< Content-Type: text/html; charset=iso-8859-1
+< X-Cache: MISS from localhost
+< X-Cache-Lookup: MISS from localhost:3128
+< Via: 1.0 localhost (squid/3.1.19)
+* HTTP/1.0 connection set to keep alive
+< Connection: keep-alive
+< 
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>301 Moved Permanently</title>
+</head><body>
+<h1>Moved Permanently</h1>
+<p>The document has moved <a href="http://192.168.1.4/wolfcms/">here</a>.</p>
+<hr>
+<address>Apache/2.2.22 (Ubuntu) Server at 192.168.1.4 Port 80</address>
+</body></html>
+* Connection #0 to host 192.168.1.4 left intact
+
